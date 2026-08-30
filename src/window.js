@@ -319,107 +319,79 @@ export const CashbookWindow = GObject.registerClass({
     }
 
     showAccountDialog() {
-        const dialog = new Adw.Dialog({
-            title: 'Add Account',
-            content_width: 460,
-            content_height: 340,
-        });
-        const content = new Gtk.Box({
-            orientation: Gtk.Orientation.VERTICAL,
-            spacing: 18,
-            css_classes: ['account-dialog'],
-        });
-        const title = new Gtk.Label({
-            label: 'Add Account',
-            xalign: 0.5,
-            css_classes: ['title-2'],
-        });
-        const description = new Gtk.Label({
-            label: 'Choose a name and icon for the account.',
-            xalign: 0,
-        });
-        const name = new Gtk.Entry({
-            placeholder_text: 'Account name',
+        const nameEntry = new Gtk.Entry({
+            placeholder_text: _('Account name'),
             activates_default: true,
         });
-        const heading = new Gtk.Label({ label: 'Choose an icon', xalign: 0, css_classes: ['heading'] });
-        const flow = new Gtk.FlowBox({
-            selection_mode: Gtk.SelectionMode.NONE,
+        const iconPicker = new Gtk.FlowBox({
+            selection_mode: Gtk.SelectionMode.SINGLE,
             homogeneous: true,
+            min_children_per_line: 4,
+            max_children_per_line: 4,
             row_spacing: 6,
             column_spacing: 6,
-            max_children_per_line: 8,
-            css_classes: ['icon-grid'],
         });
-        const actions = new Gtk.Box({
-            spacing: 10,
-            homogeneous: true,
-            css_classes: ['account-dialog-actions'],
-        });
-        const cancelButton = new Gtk.Button({ label: 'Cancel' });
-        const addButton = new Gtk.Button({
-            label: 'Add',
-            sensitive: false,
-            css_classes: ['suggested-action'],
-        });
-        let selectedIcon = 'cashbook-bank-symbolic';
-        let selectedButton = null;
+        const iconNames = new Map();
 
         for (const icon of ACCOUNT_ICONS) {
-            const button = new Gtk.Button({
-                child: new Gtk.Image({ icon_name: icon.name, pixel_size: 24 }),
-                tooltip_text: icon.label,
-                css_classes: ['flat', 'icon-choice'],
+            const child = new Gtk.FlowBoxChild({
+                tooltip_text: _(icon.label),
+                child: new Gtk.Image({
+                    icon_name: icon.name,
+                    pixel_size: 24,
+                    margin_top: 8,
+                    margin_bottom: 8,
+                    margin_start: 8,
+                    margin_end: 8,
+                }),
             });
-            button.connect('clicked', () => {
-                selectedButton?.remove_css_class('selected-icon');
-                selectedButton = button;
-                selectedIcon = icon.name;
-                button.add_css_class('selected-icon');
-            });
-            flow.insert(button, -1);
-            if (icon.name === selectedIcon) {
-                selectedButton = button;
-                button.add_css_class('selected-icon');
-            }
+            iconNames.set(child, icon.name);
+            iconPicker.append(child);
         }
+        iconPicker.select_child(iconPicker.get_child_at_index(0));
 
-        const addAccount = () => {
-            const accountName = name.text.trim();
-            if (!accountName) {
-                name.add_css_class('error');
-                name.grab_focus();
+        const form = new Gtk.Box({
+            orientation: Gtk.Orientation.VERTICAL,
+            spacing: 12,
+        });
+        form.append(nameEntry);
+        form.append(new Gtk.Label({ label: _('Icon'), xalign: 0 }));
+        form.append(iconPicker);
+
+        const dialog = new Adw.AlertDialog({
+            heading: _('Add Account'),
+            body: _('Choose a name and icon for the account.'),
+            extra_child: form,
+        });
+        dialog.add_response('cancel', _('Cancel'));
+        dialog.add_response('add', _('Add'));
+        dialog.set_response_appearance('add', Adw.ResponseAppearance.SUGGESTED);
+        dialog.set_response_enabled('add', false);
+        dialog.default_response = 'add';
+        dialog.close_response = 'cancel';
+
+        nameEntry.connect('changed', () => {
+            dialog.set_response_enabled('add', nameEntry.text.trim().length > 0);
+        });
+        dialog.connect('response', (_dialog, response) => {
+            if (response !== 'add')
                 return;
-            }
+
+            const [selectedIcon] = iconPicker.get_selected_children();
             try {
-                const id = this.database.addAccount(accountName, selectedIcon);
-                dialog.close();
+                const id = this.database.addAccount(
+                    nameEntry.text.trim(),
+                    iconNames.get(selectedIcon)
+                );
                 this.loadAccounts(id);
             } catch (error) {
                 this.showToast(error.message.includes('UNIQUE')
                     ? 'An account with this name already exists.'
                     : error.message);
             }
-        };
-
-        cancelButton.connect('clicked', () => dialog.close());
-        addButton.connect('clicked', addAccount);
-        name.connect('changed', () => {
-            addButton.sensitive = name.text.trim().length > 0;
-            name.remove_css_class('error');
         });
-        actions.append(cancelButton);
-        actions.append(addButton);
-        content.append(title);
-        content.append(description);
-        content.append(name);
-        content.append(heading);
-        content.append(flow);
-        content.append(actions);
-        dialog.child = content;
-        dialog.default_widget = addButton;
-        dialog.focus_widget = name;
         dialog.present(this);
+        nameEntry.grab_focus();
     }
 
     showTransactionDialog() {

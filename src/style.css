@@ -63,22 +63,3 @@
 .dialog-form {
   padding: 18px;
 }
-
-.account-dialog {
-  padding: 24px;
-}
-
-.icon-grid {
-  padding: 0;
-}
-
-.icon-choice {
-  min-width: 42px;
-  min-height: 42px;
-  padding: 4px;
-}
-
-.icon-choice.selected-icon {
-  background: @accent_bg_color;
-  color: @accent_fg_color;
-}
