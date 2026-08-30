@@ -73,6 +73,10 @@ class Database {
     addTransaction(accountId, type, amount, date, description) {
         this.run('add-transaction', accountId, type, amount, date, description);
     }
+
+    updateTransaction(transactionId, type, amount, date, description) {
+        this.run('update-transaction', transactionId, type, amount, date, description);
+    }
 }
 
 export const CashbookWindow = GObject.registerClass({
@@ -114,6 +118,10 @@ export const CashbookWindow = GObject.registerClass({
                 this.selectAccount(row.account);
         });
         this._search_entry.connect('search-changed', () => this.renderTransactions());
+        this._transaction_list.connect('row-activated', (_list, row) => {
+            if (row.transaction)
+                this.showTransactionDialog(row.transaction);
+        });
 
         this.openSavedDirectory();
     }
@@ -303,6 +311,12 @@ export const CashbookWindow = GObject.registerClass({
 
     createTransactionRow(transaction) {
         const typeTitle = transaction.type === 'credit' ? 'Credit' : 'Debit';
+        const row = new Gtk.ListBoxRow({
+            activatable: true,
+            selectable: false,
+            tooltip_text: 'Double-click to edit',
+        });
+        row.transaction = transaction;
         const box = new Gtk.Box({
             spacing: 18,
             css_classes: ['transaction-row', transaction.type],
@@ -338,7 +352,8 @@ export const CashbookWindow = GObject.registerClass({
         box.append(typeBox);
         box.append(description);
         box.append(amount);
-        return box;
+        row.child = box;
+        return row;
     }
 
     showAccountDialog(account = null) {
@@ -427,9 +442,10 @@ export const CashbookWindow = GObject.registerClass({
         nameEntry.grab_focus();
     }
 
-    showTransactionDialog() {
+    showTransactionDialog(transaction = null) {
         if (!this.currentAccount)
             return;
+        const editing = transaction !== null;
 
         const typeGroup = new Adw.ToggleGroup({
             homogeneous: true,
@@ -437,13 +453,14 @@ export const CashbookWindow = GObject.registerClass({
         });
         typeGroup.add(new Adw.Toggle({ name: 'credit', label: _('Credit') }));
         typeGroup.add(new Adw.Toggle({ name: 'debit', label: _('Debit') }));
-        typeGroup.active_name = 'credit';
+        typeGroup.active_name = transaction?.type ?? 'credit';
 
         const typeRow = new Adw.ActionRow({ title: _('Type') });
         typeRow.add_suffix(typeGroup);
 
         const amountEntry = new Adw.EntryRow({
             title: _('Amount'),
+            text: editing ? (transaction.amount / 100).toFixed(2) : '',
             input_purpose: Gtk.InputPurpose.NUMBER,
             activates_default: true,
         });
@@ -461,8 +478,13 @@ export const CashbookWindow = GObject.registerClass({
             hexpand: true,
             css_classes: ['transaction-calendar'],
         });
+        if (editing) {
+            const [year, month, day] = transaction.date.split('-').map(Number);
+            calendar.set_date(GLib.DateTime.new_local(year, month, day, 0, 0, 0));
+        }
         const descriptionEntry = new Adw.EntryRow({
             title: _('Description (optional)'),
+            text: transaction?.description ?? '',
             activates_default: true,
         });
         const descriptionGroup = new Adw.PreferencesGroup();
@@ -478,15 +500,17 @@ export const CashbookWindow = GObject.registerClass({
         form.append(descriptionGroup);
 
         const dialog = new Adw.AlertDialog({
-            heading: _('Add Transaction'),
-            body: `Record a credit or debit for ${this.currentAccount.name}.`,
+            heading: editing ? _('Edit Transaction') : _('Add Transaction'),
+            body: editing
+                ? `Update this transaction in ${this.currentAccount.name}.`
+                : `Record a credit or debit for ${this.currentAccount.name}.`,
             extra_child: form,
         });
         dialog.add_response('cancel', _('Cancel'));
-        dialog.add_response('add', _('Add'));
-        dialog.set_response_appearance('add', Adw.ResponseAppearance.SUGGESTED);
-        dialog.set_response_enabled('add', false);
-        dialog.default_response = 'add';
+        dialog.add_response('save', editing ? _('Save') : _('Add'));
+        dialog.set_response_appearance('save', Adw.ResponseAppearance.SUGGESTED);
+        dialog.set_response_enabled('save', editing);
+        dialog.default_response = 'save';
         dialog.close_response = 'cancel';
 
         const getAmount = () => {
@@ -496,24 +520,34 @@ export const CashbookWindow = GObject.registerClass({
             return Math.round(Number(value) * 100);
         };
         amountEntry.connect('changed', () => {
-            dialog.set_response_enabled('add', getAmount() > 0);
+            dialog.set_response_enabled('save', getAmount() > 0);
         });
 
         dialog.connect('response', (_dialog, response) => {
-            if (response !== 'add')
+            if (response !== 'save')
                 return;
 
             const accountId = this.currentAccount.id;
             const date = calendar.get_date().format('%F');
             try {
-                this.database.addTransaction(
-                    accountId,
-                    typeGroup.active_name,
-                    getAmount(),
-                    date,
-                    descriptionEntry.text.trim()
-                );
-                this._search_entry.text = '';
+                if (editing) {
+                    this.database.updateTransaction(
+                        transaction.id,
+                        typeGroup.active_name,
+                        getAmount(),
+                        date,
+                        descriptionEntry.text.trim()
+                    );
+                } else {
+                    this.database.addTransaction(
+                        accountId,
+                        typeGroup.active_name,
+                        getAmount(),
+                        date,
+                        descriptionEntry.text.trim()
+                    );
+                    this._search_entry.text = '';
+                }
                 this.loadAccounts(accountId);
             } catch (error) {
                 this.showToast(error.message);

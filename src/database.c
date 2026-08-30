@@ -207,6 +207,30 @@ add_transaction(sqlite3 *db, char **values)
     return EXIT_SUCCESS;
 }
 
+static int
+update_transaction(sqlite3 *db, char **values)
+{
+    sqlite3_stmt *statement = NULL;
+    const char *sql =
+        "UPDATE transactions "
+        "SET type = ?, amount_paise = ?, transaction_date = ?, description = ? "
+        "WHERE id = ?";
+
+    if (prepare(db, &statement, sql) != EXIT_SUCCESS)
+        return EXIT_FAILURE;
+    sqlite3_bind_text(statement, 1, values[1], -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int64(statement, 2, strtoll(values[2], NULL, 10));
+    sqlite3_bind_text(statement, 3, values[3], -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(statement, 4, values[4], -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int64(statement, 5, strtoll(values[0], NULL, 10));
+    if (sqlite3_step(statement) != SQLITE_DONE) {
+        sqlite3_finalize(statement);
+        return fail(db, "Could not update transaction");
+    }
+    sqlite3_finalize(statement);
+    return EXIT_SUCCESS;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -238,6 +262,8 @@ main(int argc, char **argv)
         result = list_transactions(db, argv[3]);
     else if (strcmp(argv[2], "add-transaction") == 0 && argc == 8)
         result = add_transaction(db, &argv[3]);
+    else if (strcmp(argv[2], "update-transaction") == 0 && argc == 8)
+        result = update_transaction(db, &argv[3]);
     else
         fputs("Unknown command or wrong number of values\n", stderr);
 
