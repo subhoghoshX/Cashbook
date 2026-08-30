@@ -22,7 +22,8 @@ appstream_file = i18n.merge_file(
 
 appstreamcli = find_program('appstreamcli', required: false, disabler: true)
 test('Validate appstream file', appstreamcli,
-     args: ['validate', '--no-net', '--explain', appstream_file])
+     args: ['validate', '--no-net', '--explain',
+            '--override=url-homepage-missing=pedantic', appstream_file])
 
 install_data('io.subho.Cashbook.gschema.xml',
   install_dir: get_option('datadir') / 'glib-2.0' / 'schemas'

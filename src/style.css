@@ -1,0 +1,86 @@
+.navigation-sidebar row {
+  padding: 4px 8px;
+}
+
+.account-row {
+  padding: 8px 6px;
+}
+
+.account-icon {
+  background: alpha(@accent_bg_color, 0.12);
+  border-radius: 9px;
+  padding: 7px;
+}
+
+.table-header {
+  padding: 10px 22px;
+  border-bottom: 1px solid alpha(@borders, 0.8);
+  color: @dim_label_color;
+  font-size: 0.85em;
+  font-weight: 700;
+}
+
+.transaction-row {
+  padding: 12px 22px;
+  border-bottom: 1px solid alpha(@borders, 0.45);
+}
+
+.transaction-row.credit {
+  box-shadow: inset 3px 0 @success_color;
+}
+
+.transaction-row.debit {
+  box-shadow: inset 3px 0 @error_color;
+}
+
+.transaction-type {
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 0.82em;
+  font-weight: 700;
+}
+
+.transaction-type.credit {
+  background: alpha(@success_color, 0.13);
+  color: @success_color;
+}
+
+.transaction-type.debit {
+  background: alpha(@error_color, 0.12);
+  color: @error_color;
+}
+
+.amount-credit {
+  color: @success_color;
+  font-weight: 700;
+}
+
+.amount-debit {
+  color: @error_color;
+  font-weight: 700;
+}
+
+#balance_bar {
+  padding: 14px 22px;
+  border-top: 1px solid @borders;
+  background: @headerbar_bg_color;
+}
+
+.dialog-form {
+  padding: 18px;
+}
+
+.icon-grid {
+  padding: 8px;
+}
+
+.icon-choice {
+  min-width: 42px;
+  min-height: 42px;
+  padding: 4px;
+}
+
+.icon-choice.selected-icon {
+  background: @accent_bg_color;
+  color: @accent_fg_color;
+}

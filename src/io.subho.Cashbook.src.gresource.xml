@@ -3,5 +3,6 @@
   <gresource prefix="/io/subho/Cashbook/js">
     <file>main.js</file>
     <file>window.js</file>
+    <file alias="style.css">style.css</file>
   </gresource>
 </gresources>

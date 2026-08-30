@@ -20,6 +20,7 @@
 
 import GObject from 'gi://GObject';
 import Gio from 'gi://Gio';
+import Gdk from 'gi://Gdk?version=4.0';
 import Gtk from 'gi://Gtk?version=4.0';
 import Adw from 'gi://Adw?version=1';
 
@@ -67,8 +68,16 @@ export const CashbookApplication = GObject.registerClass(
         vfunc_activate() {
             let {active_window} = this;
 
-            if (!active_window)
+            if (!active_window) {
+                const provider = new Gtk.CssProvider();
+                provider.load_from_resource('/io/subho/Cashbook/js/style.css');
+                Gtk.StyleContext.add_provider_for_display(
+                    Gdk.Display.get_default(),
+                    provider,
+                    Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
+                );
                 active_window = new CashbookWindow(this);
+            }
 
             active_window.present();
         }

@@ -1,6 +1,13 @@
 pkgdatadir = get_option('datadir') / meson.project_name()
 gnome = import('gnome')
 
+executable(
+  'cashbook-db',
+  'database.c',
+  dependencies: dependency('sqlite3'),
+  install: true,
+)
+
 src_res = gnome.compile_resources('io.subho.Cashbook.src',
   'io.subho.Cashbook.src.gresource.xml',
   gresource_bundle: true,
