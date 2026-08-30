@@ -1,0 +1,8 @@
+# List of source files containing translatable strings.
+# Please keep this file sorted alphabetically.
+data/io.subho.Cashbook.desktop.in
+data/io.subho.Cashbook.metainfo.xml.in
+data/io.subho.Cashbook.gschema.xml
+src/main.js
+src/window.js
+src/window.ui

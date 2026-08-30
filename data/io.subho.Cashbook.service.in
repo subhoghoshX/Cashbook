@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=io.subho.Cashbook
+Exec=@bindir@/io.subho.Cashbook --gapplication-service

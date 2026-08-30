@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Cashbook
+Exec=io.subho.Cashbook
+Icon=io.subho.Cashbook
+Terminal=false
+Type=Application
+Categories=Utility;
+Keywords=GTK;
+StartupNotify=true
+DBusActivatable=true
