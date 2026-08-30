@@ -144,10 +144,10 @@
                                               <object class="GtkBox" id="table_header">
                                                 <property name="spacing">18</property>
                                                 <style><class name="table-header"/></style>
-                                                <child><object class="GtkLabel"><property name="label" translatable="yes">Date</property><property name="xalign">0</property><property name="width-chars">13</property></object></child>
-                                                <child><object class="GtkLabel"><property name="label" translatable="yes">Type</property><property name="xalign">0</property><property name="width-chars">9</property></object></child>
+                                                <child><object class="GtkLabel"><property name="label" translatable="yes">Date</property><property name="xalign">0</property><property name="width-request">120</property></object></child>
+                                                <child><object class="GtkLabel"><property name="label" translatable="yes">Type</property><property name="xalign">0</property><property name="width-request">96</property></object></child>
                                                 <child><object class="GtkLabel"><property name="label" translatable="yes">Description</property><property name="xalign">0</property><property name="hexpand">True</property></object></child>
-                                                <child><object class="GtkLabel"><property name="label" translatable="yes">Amount</property><property name="xalign">1</property><property name="width-chars">16</property></object></child>
+                                                <child><object class="GtkLabel"><property name="label" translatable="yes">Amount</property><property name="xalign">1</property><property name="width-request">140</property></object></child>
                                               </object>
                                             </child>
                                             <child>

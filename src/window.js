@@ -324,9 +324,9 @@ export const CashbookWindow = GObject.registerClass({
         const date = new Gtk.Label({
             label: transaction.date,
             xalign: 0,
-            width_chars: 13,
+            width_request: 120,
         });
-        const typeBox = new Gtk.Box({ width_request: 86, halign: Gtk.Align.START });
+        const typeBox = new Gtk.Box({ width_request: 96, halign: Gtk.Align.START });
         const type = new Gtk.Label({
             label: typeTitle,
             css_classes: ['transaction-type', transaction.type],
@@ -343,7 +343,7 @@ export const CashbookWindow = GObject.registerClass({
         const amount = new Gtk.Label({
             label: `${sign}${formatMoney(transaction.amount)}`,
             xalign: 1,
-            width_chars: 16,
+            width_request: 140,
             css_classes: [transaction.type === 'credit' ? 'amount-credit' : 'amount-debit'],
         });
 
