@@ -131,6 +131,24 @@ add_account(sqlite3 *db, const char *name, const char *icon)
 }
 
 static int
+update_account(sqlite3 *db, const char *account_id, const char *name, const char *icon)
+{
+    sqlite3_stmt *statement = NULL;
+
+    if (prepare(db, &statement, "UPDATE accounts SET name = ?, icon = ? WHERE id = ?") != EXIT_SUCCESS)
+        return EXIT_FAILURE;
+    sqlite3_bind_text(statement, 1, name, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(statement, 2, icon, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int64(statement, 3, strtoll(account_id, NULL, 10));
+    if (sqlite3_step(statement) != SQLITE_DONE) {
+        sqlite3_finalize(statement);
+        return fail(db, "Could not update account");
+    }
+    sqlite3_finalize(statement);
+    return EXIT_SUCCESS;
+}
+
+static int
 list_transactions(sqlite3 *db, const char *account_id)
 {
     sqlite3_stmt *statement = NULL;
@@ -214,6 +232,8 @@ main(int argc, char **argv)
         result = list_accounts(db);
     else if (strcmp(argv[2], "add-account") == 0 && argc == 5)
         result = add_account(db, argv[3], argv[4]);
+    else if (strcmp(argv[2], "update-account") == 0 && argc == 6)
+        result = update_account(db, argv[3], argv[4], argv[5]);
     else if (strcmp(argv[2], "list-transactions") == 0 && argc == 4)
         result = list_transactions(db, argv[3]);
     else if (strcmp(argv[2], "add-transaction") == 0 && argc == 8)

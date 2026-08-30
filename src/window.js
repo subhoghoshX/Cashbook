@@ -63,6 +63,10 @@ class Database {
         return Number(this.run('add-account', name, icon));
     }
 
+    updateAccount(accountId, name, icon) {
+        this.run('update-account', accountId, name, icon);
+    }
+
     listTransactions(accountId) {
         return JSON.parse(this.run('list-transactions', accountId));
     }
@@ -101,6 +105,12 @@ export const CashbookWindow = GObject.registerClass({
                 this.showAccountDialog();
         });
         this._account_list.connect('row-selected', (_list, row) => {
+            let child = this._account_list.get_first_child();
+            while (child) {
+                if (child.editButton)
+                    child.editButton.visible = child === row;
+                child = child.get_next_sibling();
+            }
             if (row?.account)
                 this.selectAccount(row.account);
         });
@@ -201,7 +211,11 @@ export const CashbookWindow = GObject.registerClass({
         const box = new Gtk.Box({ spacing: 12, css_classes: ['account-row'] });
         const image = new Gtk.Image({ icon_name: account.icon, pixel_size: 22 });
         image.add_css_class('account-icon');
-        const text = new Gtk.Box({ orientation: Gtk.Orientation.VERTICAL, valign: Gtk.Align.CENTER });
+        const text = new Gtk.Box({
+            orientation: Gtk.Orientation.VERTICAL,
+            valign: Gtk.Align.CENTER,
+            hexpand: true,
+        });
         const name = new Gtk.Label({ label: account.name, xalign: 0, ellipsize: 3 });
         const balance = new Gtk.Label({
             label: formatMoney(account.balance),
@@ -212,6 +226,16 @@ export const CashbookWindow = GObject.registerClass({
         text.append(balance);
         box.append(image);
         box.append(text);
+        const editButton = new Gtk.Button({
+            icon_name: 'document-edit-symbolic',
+            tooltip_text: 'Edit Account',
+            valign: Gtk.Align.CENTER,
+            visible: false,
+            css_classes: ['flat', 'circular'],
+        });
+        editButton.connect('clicked', () => this.showAccountDialog(account));
+        row.editButton = editButton;
+        box.append(editButton);
         row.child = box;
         return row;
     }
@@ -318,9 +342,11 @@ export const CashbookWindow = GObject.registerClass({
         return box;
     }
 
-    showAccountDialog() {
+    showAccountDialog(account = null) {
+        const editing = account !== null;
         const nameEntry = new Gtk.Entry({
             placeholder_text: _('Account name'),
+            text: account?.name ?? '',
             activates_default: true,
         });
         const iconPicker = new Gtk.FlowBox({
@@ -348,7 +374,10 @@ export const CashbookWindow = GObject.registerClass({
             iconNames.set(child, icon.name);
             iconPicker.append(child);
         }
-        iconPicker.select_child(iconPicker.get_child_at_index(0));
+        const selectedIndex = editing
+            ? Math.max(0, ACCOUNT_ICONS.findIndex(icon => icon.name === account.icon))
+            : 0;
+        iconPicker.select_child(iconPicker.get_child_at_index(selectedIndex));
 
         const form = new Gtk.Box({
             orientation: Gtk.Orientation.VERTICAL,
@@ -359,30 +388,35 @@ export const CashbookWindow = GObject.registerClass({
         form.append(iconPicker);
 
         const dialog = new Adw.AlertDialog({
-            heading: _('Add Account'),
-            body: _('Choose a name and icon for the account.'),
+            heading: editing ? _('Edit Account') : _('Add Account'),
+            body: editing
+                ? _('Change the name or icon for this account.')
+                : _('Choose a name and icon for the account.'),
             extra_child: form,
         });
         dialog.add_response('cancel', _('Cancel'));
-        dialog.add_response('add', _('Add'));
-        dialog.set_response_appearance('add', Adw.ResponseAppearance.SUGGESTED);
-        dialog.set_response_enabled('add', false);
-        dialog.default_response = 'add';
+        dialog.add_response('save', editing ? _('Save') : _('Add'));
+        dialog.set_response_appearance('save', Adw.ResponseAppearance.SUGGESTED);
+        dialog.set_response_enabled('save', editing);
+        dialog.default_response = 'save';
         dialog.close_response = 'cancel';
 
         nameEntry.connect('changed', () => {
-            dialog.set_response_enabled('add', nameEntry.text.trim().length > 0);
+            dialog.set_response_enabled('save', nameEntry.text.trim().length > 0);
         });
         dialog.connect('response', (_dialog, response) => {
-            if (response !== 'add')
+            if (response !== 'save')
                 return;
 
             const [selectedIcon] = iconPicker.get_selected_children();
             try {
-                const id = this.database.addAccount(
-                    nameEntry.text.trim(),
-                    iconNames.get(selectedIcon)
-                );
+                const name = nameEntry.text.trim();
+                const icon = iconNames.get(selectedIcon);
+                const id = editing
+                    ? account.id
+                    : this.database.addAccount(name, icon);
+                if (editing)
+                    this.database.updateAccount(id, name, icon);
                 this.loadAccounts(id);
             } catch (error) {
                 this.showToast(error.message.includes('UNIQUE')
