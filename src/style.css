@@ -60,6 +60,26 @@
   font-weight: 700;
 }
 
-.dialog-form {
-  padding: 18px;
+calendar.transaction-calendar {
+  padding: 8px;
+  background-color: @card_bg_color;
+  border: 1px solid alpha(@borders, 0.8);
+  border-radius: 12px;
+}
+
+calendar.transaction-calendar header {
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid alpha(@borders, 0.55);
+}
+
+calendar.transaction-calendar grid label {
+  min-width: 36px;
+  min-height: 32px;
+  border-radius: 99px;
+}
+
+calendar.transaction-calendar grid label:selected {
+  background-color: @accent_bg_color;
+  color: @accent_fg_color;
 }

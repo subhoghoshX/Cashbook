@@ -6,7 +6,6 @@ import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import Gtk from 'gi://Gtk';
 
-const RESPONSE_ADD = Gtk.ResponseType.ACCEPT;
 const ACCOUNT_ICONS = [
     { name: 'cashbook-bank-symbolic', label: 'Bank' },
     { name: 'cashbook-money-symbolic', label: 'Cash' },
@@ -432,83 +431,94 @@ export const CashbookWindow = GObject.registerClass({
         if (!this.currentAccount)
             return;
 
-        const dialog = new Gtk.Dialog({
-            title: `New Transaction - ${this.currentAccount.name}`,
-            transient_for: this,
-            modal: true,
-            default_width: 440,
+        const typeGroup = new Adw.ToggleGroup({
+            homogeneous: true,
         });
-        dialog.add_button('Cancel', Gtk.ResponseType.CANCEL);
-        dialog.add_button('Add Transaction', RESPONSE_ADD);
-        dialog.set_default_response(RESPONSE_ADD);
+        typeGroup.add(new Adw.Toggle({ name: 'credit', label: _('Credit') }));
+        typeGroup.add(new Adw.Toggle({ name: 'debit', label: _('Debit') }));
+        typeGroup.active_name = 'credit';
+
+        const typeRow = new Adw.ActionRow({ title: _('Type') });
+        typeRow.add_suffix(typeGroup);
+
+        const amountEntry = new Adw.EntryRow({
+            title: _('Amount'),
+            input_purpose: Gtk.InputPurpose.NUMBER,
+            activates_default: true,
+        });
+        amountEntry.add_prefix(new Gtk.Label({
+            label: '₹',
+            css_classes: ['title-3', 'dim-label'],
+        }));
+
+        const details = new Adw.PreferencesGroup();
+        details.add(typeRow);
+        details.add(amountEntry);
+
+        const calendar = new Gtk.Calendar({
+            halign: Gtk.Align.FILL,
+            hexpand: true,
+            css_classes: ['transaction-calendar'],
+        });
+        const descriptionEntry = new Adw.EntryRow({
+            title: _('Description (optional)'),
+            activates_default: true,
+        });
+        const descriptionGroup = new Adw.PreferencesGroup();
+        descriptionGroup.add(descriptionEntry);
 
         const form = new Gtk.Box({
             orientation: Gtk.Orientation.VERTICAL,
-            spacing: 14,
-            css_classes: ['dialog-form'],
+            spacing: 12,
         });
-        const type = Gtk.DropDown.new_from_strings(['Credit', 'Debit']);
-        const amount = new Gtk.SpinButton({
-            adjustment: new Gtk.Adjustment({
-                lower: 0.01,
-                upper: 1000000000,
-                step_increment: 1,
-                page_increment: 100,
-            }),
-            digits: 2,
-            numeric: true,
-            activates_default: true,
-        });
-        const calendar = new Gtk.Calendar({ halign: Gtk.Align.CENTER });
-        const description = new Gtk.Entry({
-            placeholder_text: 'Description (optional)',
-            activates_default: true,
-        });
-
-        const typeRow = new Adw.ActionRow({ title: 'Type' });
-        typeRow.add_suffix(type);
-        const amountRow = new Adw.ActionRow({ title: 'Amount', subtitle: 'Indian rupees' });
-        amountRow.add_prefix(new Gtk.Label({ label: '₹', css_classes: ['title-3'] }));
-        amountRow.add_suffix(amount);
-        const details = new Adw.PreferencesGroup();
-        details.add(typeRow);
-        details.add(amountRow);
         form.append(details);
-        form.append(new Gtk.Label({ label: 'Date', xalign: 0, css_classes: ['heading'] }));
+        form.append(new Gtk.Label({ label: _('Date'), xalign: 0, css_classes: ['heading'] }));
         form.append(calendar);
-        form.append(description);
-        dialog.get_content_area().append(form);
+        form.append(descriptionGroup);
+
+        const dialog = new Adw.AlertDialog({
+            heading: _('Add Transaction'),
+            body: `Record a credit or debit for ${this.currentAccount.name}.`,
+            extra_child: form,
+        });
+        dialog.add_response('cancel', _('Cancel'));
+        dialog.add_response('add', _('Add'));
+        dialog.set_response_appearance('add', Adw.ResponseAppearance.SUGGESTED);
+        dialog.set_response_enabled('add', false);
+        dialog.default_response = 'add';
+        dialog.close_response = 'cancel';
+
+        const getAmount = () => {
+            const value = amountEntry.text.trim();
+            if (!/^\d+(?:\.\d{1,2})?$/.test(value))
+                return 0;
+            return Math.round(Number(value) * 100);
+        };
+        amountEntry.connect('changed', () => {
+            dialog.set_response_enabled('add', getAmount() > 0);
+        });
 
         dialog.connect('response', (_dialog, response) => {
-            if (response !== RESPONSE_ADD) {
-                dialog.destroy();
+            if (response !== 'add')
                 return;
-            }
-            const paise = Math.round(amount.value * 100);
-            if (paise <= 0) {
-                amount.add_css_class('error');
-                amount.grab_focus();
-                return;
-            }
+
             const accountId = this.currentAccount.id;
-            const transactionType = type.selected === 0 ? 'credit' : 'debit';
             const date = calendar.get_date().format('%F');
             try {
                 this.database.addTransaction(
                     accountId,
-                    transactionType,
-                    paise,
+                    typeGroup.active_name,
+                    getAmount(),
                     date,
-                    description.text.trim()
+                    descriptionEntry.text.trim()
                 );
-                dialog.destroy();
                 this._search_entry.text = '';
                 this.loadAccounts(accountId);
             } catch (error) {
                 this.showToast(error.message);
             }
         });
-        dialog.present();
-        amount.grab_focus();
+        dialog.present(this);
+        amountEntry.grab_focus();
     }
 });
