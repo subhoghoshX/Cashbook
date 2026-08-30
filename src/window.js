@@ -433,6 +433,7 @@ export const CashbookWindow = GObject.registerClass({
 
         const typeGroup = new Adw.ToggleGroup({
             homogeneous: true,
+            valign: Gtk.Align.CENTER,
         });
         typeGroup.add(new Adw.Toggle({ name: 'credit', label: _('Credit') }));
         typeGroup.add(new Adw.Toggle({ name: 'debit', label: _('Debit') }));
