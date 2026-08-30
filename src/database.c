@@ -51,7 +51,7 @@ initialize(sqlite3 *db)
 {
     const char *sql =
         "PRAGMA foreign_keys = ON;"
-        "PRAGMA journal_mode = WAL;"
+        "PRAGMA journal_mode = DELETE;"
         "CREATE TABLE IF NOT EXISTS accounts ("
         " id INTEGER PRIMARY KEY,"
         " name TEXT NOT NULL COLLATE NOCASE UNIQUE,"
