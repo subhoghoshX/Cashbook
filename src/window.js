@@ -7,9 +7,15 @@ import GObject from 'gi://GObject';
 import Gtk from 'gi://Gtk';
 
 const RESPONSE_ADD = Gtk.ResponseType.ACCEPT;
-const ICON_WORDS = [
-    'bank', 'briefcase', 'business', 'card', 'cash', 'coin', 'credit',
-    'currency', 'finance', 'money', 'office', 'payment', 'safe', 'wallet',
+const ACCOUNT_ICONS = [
+    { name: 'cashbook-bank-symbolic', label: 'Bank' },
+    { name: 'cashbook-money-symbolic', label: 'Cash' },
+    { name: 'cashbook-coin-symbolic', label: 'Coins' },
+    { name: 'cashbook-credit-card-symbolic', label: 'Card' },
+    { name: 'cashbook-money-clip-symbolic', label: 'Money clip' },
+    { name: 'cashbook-wallet-symbolic', label: 'Wallet' },
+    { name: 'cashbook-wallet2-symbolic', label: 'Wallet 2' },
+    { name: 'cashbook-wallet3-symbolic', label: 'Wallet 3' },
 ];
 
 const currencyFormatter = new Intl.NumberFormat('en-IN', {
@@ -71,9 +77,9 @@ export const CashbookWindow = GObject.registerClass({
     Template: 'resource:///io/subho/Cashbook/window.ui',
     InternalChildren: [
         'toast_overlay', 'root_stack', 'choose_folder_button', 'split_view',
-        'add_account_button', 'account_list', 'account_title', 'search_entry',
+        'add_account_button', 'account_list', 'search_entry',
         'add_transaction_button', 'transaction_stack', 'empty_page',
-        'empty_action_button', 'transaction_list', 'balance_bar', 'balance_label',
+        'empty_action_button', 'transaction_list',
     ],
 }, class CashbookWindow extends Adw.ApplicationWindow {
     constructor(application) {
@@ -211,12 +217,10 @@ export const CashbookWindow = GObject.registerClass({
     }
 
     showNoAccount() {
-        this._account_title.label = 'Cashbook';
         this._search_entry.visible = false;
         this._add_transaction_button.sensitive = false;
-        this._balance_bar.visible = false;
         this._transaction_stack.visible_child_name = 'empty';
-        this._empty_page.icon_name = 'wallet-symbolic';
+        this._empty_page.icon_name = 'cashbook-bank-symbolic';
         this._empty_page.title = 'Add an account to begin';
         this._empty_page.description = 'Accounts keep their own transactions and balance.';
         this._empty_action_button.label = 'Add Account';
@@ -225,11 +229,8 @@ export const CashbookWindow = GObject.registerClass({
 
     selectAccount(account) {
         this.currentAccount = account;
-        this._account_title.label = account.name;
         this._search_entry.visible = true;
         this._add_transaction_button.sensitive = true;
-        this._balance_bar.visible = true;
-        this._balance_label.label = formatMoney(account.balance);
         try {
             this.transactions = this.database.listTransactions(account.id);
             this.renderTransactions();
@@ -318,21 +319,20 @@ export const CashbookWindow = GObject.registerClass({
     }
 
     showAccountDialog() {
-        const dialog = new Gtk.Dialog({
+        const dialog = new Adw.Dialog({
             title: 'New Account',
-            transient_for: this,
-            modal: true,
-            default_width: 520,
-            default_height: 500,
+            content_width: 520,
+            content_height: 430,
         });
-        dialog.add_button('Cancel', Gtk.ResponseType.CANCEL);
-        dialog.add_button('Add Account', RESPONSE_ADD);
-        dialog.set_default_response(RESPONSE_ADD);
-
-        const form = new Gtk.Box({
+        const content = new Gtk.Box({
             orientation: Gtk.Orientation.VERTICAL,
-            spacing: 14,
-            css_classes: ['dialog-form'],
+            spacing: 18,
+            css_classes: ['account-dialog'],
+        });
+        const title = new Gtk.Label({
+            label: 'New Account',
+            xalign: 0,
+            css_classes: ['title-2'],
         });
         const name = new Gtk.Entry({
             placeholder_text: 'Account name',
@@ -344,48 +344,49 @@ export const CashbookWindow = GObject.registerClass({
             homogeneous: true,
             row_spacing: 6,
             column_spacing: 6,
-            max_children_per_line: 9,
+            max_children_per_line: 4,
             css_classes: ['icon-grid'],
         });
         const scroll = new Gtk.ScrolledWindow({ vexpand: true, child: flow });
-        let selectedIcon = 'wallet-symbolic';
+        const actions = new Gtk.Box({
+            spacing: 10,
+            halign: Gtk.Align.END,
+            css_classes: ['account-dialog-actions'],
+        });
+        const cancelButton = new Gtk.Button({ label: 'Cancel' });
+        const addButton = new Gtk.Button({
+            label: 'Add Account',
+            css_classes: ['suggested-action'],
+        });
+        let selectedIcon = 'cashbook-bank-symbolic';
         let selectedButton = null;
 
-        const theme = Gtk.IconTheme.get_for_display(this.get_display());
-        let icons = theme.get_icon_names()
-            .filter(icon => ICON_WORDS.some(word => icon.toLocaleLowerCase().includes(word)))
-            .sort();
-        if (!icons.includes(selectedIcon) && theme.has_icon(selectedIcon))
-            icons.unshift(selectedIcon);
-
-        for (const icon of icons) {
+        for (const icon of ACCOUNT_ICONS) {
+            const choice = new Gtk.Box({
+                orientation: Gtk.Orientation.VERTICAL,
+                spacing: 6,
+            });
+            choice.append(new Gtk.Image({ icon_name: icon.name, pixel_size: 28 }));
+            choice.append(new Gtk.Label({ label: icon.label, css_classes: ['caption'] }));
             const button = new Gtk.Button({
-                child: new Gtk.Image({ icon_name: icon, pixel_size: 24 }),
-                tooltip_text: icon,
+                child: choice,
+                tooltip_text: icon.label,
                 css_classes: ['flat', 'icon-choice'],
             });
             button.connect('clicked', () => {
                 selectedButton?.remove_css_class('selected-icon');
                 selectedButton = button;
-                selectedIcon = icon;
+                selectedIcon = icon.name;
                 button.add_css_class('selected-icon');
             });
             flow.insert(button, -1);
-            if (icon === selectedIcon) {
+            if (icon.name === selectedIcon) {
                 selectedButton = button;
                 button.add_css_class('selected-icon');
             }
         }
 
-        form.append(name);
-        form.append(heading);
-        form.append(scroll);
-        dialog.get_content_area().append(form);
-        dialog.connect('response', (_dialog, response) => {
-            if (response !== RESPONSE_ADD) {
-                dialog.destroy();
-                return;
-            }
+        const addAccount = () => {
             const accountName = name.text.trim();
             if (!accountName) {
                 name.add_css_class('error');
@@ -394,16 +395,28 @@ export const CashbookWindow = GObject.registerClass({
             }
             try {
                 const id = this.database.addAccount(accountName, selectedIcon);
-                dialog.destroy();
+                dialog.close();
                 this.loadAccounts(id);
             } catch (error) {
                 this.showToast(error.message.includes('UNIQUE')
                     ? 'An account with this name already exists.'
                     : error.message);
             }
-        });
-        dialog.present();
-        name.grab_focus();
+        };
+
+        cancelButton.connect('clicked', () => dialog.close());
+        addButton.connect('clicked', addAccount);
+        actions.append(cancelButton);
+        actions.append(addButton);
+        content.append(title);
+        content.append(name);
+        content.append(heading);
+        content.append(scroll);
+        content.append(actions);
+        dialog.child = content;
+        dialog.default_widget = addButton;
+        dialog.focus_widget = name;
+        dialog.present(this);
     }
 
     showTransactionDialog() {

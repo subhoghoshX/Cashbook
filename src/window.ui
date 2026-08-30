@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <interface>
   <requires lib="gtk" version="4.10"/>
-  <requires lib="Adw" version="1.4"/>
+  <requires lib="Adw" version="1.5"/>
   <template class="CashbookWindow" parent="AdwApplicationWindow">
     <property name="title" translatable="yes">Cashbook</property>
     <property name="default-width">1080</property>
@@ -54,13 +54,12 @@
                           <object class="AdwToolbarView">
                             <child type="top">
                               <object class="AdwHeaderBar">
-                                <property name="show-title">False</property>
-                                <child type="start">
+                                <property name="title-widget">
                                   <object class="GtkLabel">
                                     <property name="label" translatable="yes">Accounts</property>
-                                    <style><class name="title-3"/></style>
+                                    <style><class name="heading"/></style>
                                   </object>
-                                </child>
+                                </property>
                                 <child type="end">
                                   <object class="GtkButton" id="add_account_button">
                                     <property name="icon-name">list-add-symbolic</property>
@@ -93,19 +92,12 @@
                             <child type="top">
                               <object class="AdwHeaderBar" id="content_header">
                                 <property name="title-widget">
-                                  <object class="GtkLabel" id="account_title">
-                                    <property name="label" translatable="yes">Cashbook</property>
-                                    <property name="ellipsize">end</property>
-                                    <style><class name="title"/></style>
-                                  </object>
-                                </property>
-                                <child type="end">
                                   <object class="GtkSearchEntry" id="search_entry">
                                     <property name="placeholder-text" translatable="yes">Search transactions</property>
-                                    <property name="width-chars">24</property>
+                                    <property name="width-chars">28</property>
                                     <property name="visible">False</property>
                                   </object>
-                                </child>
+                                </property>
                                 <child type="end">
                                   <object class="GtkButton" id="add_transaction_button">
                                     <property name="icon-name">list-add-symbolic</property>
@@ -128,7 +120,7 @@
                                         <property name="name">empty</property>
                                         <property name="child">
                                           <object class="AdwStatusPage" id="empty_page">
-                                            <property name="icon-name">wallet-symbolic</property>
+                                            <property name="icon-name">cashbook-bank-symbolic</property>
                                             <property name="title" translatable="yes">Add an account to begin</property>
                                             <property name="description" translatable="yes">Accounts keep their own transactions and balance.</property>
                                             <property name="child">
@@ -174,14 +166,6 @@
                                         </property>
                                       </object>
                                     </child>
-                                  </object>
-                                </child>
-                                <child>
-                                  <object class="GtkBox" id="balance_bar">
-                                    <property name="spacing">12</property>
-                                    <property name="visible">False</property>
-                                    <child><object class="GtkLabel"><property name="label" translatable="yes">Current balance</property><property name="hexpand">True</property><property name="xalign">1</property><style><class name="dim-label"/></style></object></child>
-                                    <child><object class="GtkLabel" id="balance_label"><property name="label">₹0.00</property><property name="width-chars">16</property><property name="xalign">1</property><style><class name="title-3"/></style></object></child>
                                   </object>
                                 </child>
                               </object>

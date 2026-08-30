@@ -60,14 +60,12 @@
   font-weight: 700;
 }
 
-#balance_bar {
-  padding: 14px 22px;
-  border-top: 1px solid @borders;
-  background: @headerbar_bg_color;
-}
-
 .dialog-form {
   padding: 18px;
+}
+
+.account-dialog {
+  padding: 24px;
 }
 
 .icon-grid {
@@ -75,9 +73,9 @@
 }
 
 .icon-choice {
-  min-width: 42px;
-  min-height: 42px;
-  padding: 4px;
+  min-width: 96px;
+  min-height: 70px;
+  padding: 8px;
 }
 
 .icon-choice.selected-icon {
