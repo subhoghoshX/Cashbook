@@ -320,9 +320,9 @@ export const CashbookWindow = GObject.registerClass({
 
     showAccountDialog() {
         const dialog = new Adw.Dialog({
-            title: 'New Account',
-            content_width: 520,
-            content_height: 430,
+            title: 'Add Account',
+            content_width: 460,
+            content_height: 340,
         });
         const content = new Gtk.Box({
             orientation: Gtk.Orientation.VERTICAL,
@@ -330,9 +330,13 @@ export const CashbookWindow = GObject.registerClass({
             css_classes: ['account-dialog'],
         });
         const title = new Gtk.Label({
-            label: 'New Account',
-            xalign: 0,
+            label: 'Add Account',
+            xalign: 0.5,
             css_classes: ['title-2'],
+        });
+        const description = new Gtk.Label({
+            label: 'Choose a name and icon for the account.',
+            xalign: 0,
         });
         const name = new Gtk.Entry({
             placeholder_text: 'Account name',
@@ -344,32 +348,26 @@ export const CashbookWindow = GObject.registerClass({
             homogeneous: true,
             row_spacing: 6,
             column_spacing: 6,
-            max_children_per_line: 4,
+            max_children_per_line: 8,
             css_classes: ['icon-grid'],
         });
-        const scroll = new Gtk.ScrolledWindow({ vexpand: true, child: flow });
         const actions = new Gtk.Box({
             spacing: 10,
-            halign: Gtk.Align.END,
+            homogeneous: true,
             css_classes: ['account-dialog-actions'],
         });
         const cancelButton = new Gtk.Button({ label: 'Cancel' });
         const addButton = new Gtk.Button({
-            label: 'Add Account',
+            label: 'Add',
+            sensitive: false,
             css_classes: ['suggested-action'],
         });
         let selectedIcon = 'cashbook-bank-symbolic';
         let selectedButton = null;
 
         for (const icon of ACCOUNT_ICONS) {
-            const choice = new Gtk.Box({
-                orientation: Gtk.Orientation.VERTICAL,
-                spacing: 6,
-            });
-            choice.append(new Gtk.Image({ icon_name: icon.name, pixel_size: 28 }));
-            choice.append(new Gtk.Label({ label: icon.label, css_classes: ['caption'] }));
             const button = new Gtk.Button({
-                child: choice,
+                child: new Gtk.Image({ icon_name: icon.name, pixel_size: 24 }),
                 tooltip_text: icon.label,
                 css_classes: ['flat', 'icon-choice'],
             });
@@ -406,12 +404,17 @@ export const CashbookWindow = GObject.registerClass({
 
         cancelButton.connect('clicked', () => dialog.close());
         addButton.connect('clicked', addAccount);
+        name.connect('changed', () => {
+            addButton.sensitive = name.text.trim().length > 0;
+            name.remove_css_class('error');
+        });
         actions.append(cancelButton);
         actions.append(addButton);
         content.append(title);
+        content.append(description);
         content.append(name);
         content.append(heading);
-        content.append(scroll);
+        content.append(flow);
         content.append(actions);
         dialog.child = content;
         dialog.default_widget = addButton;
