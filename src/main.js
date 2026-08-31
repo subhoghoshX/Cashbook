@@ -63,6 +63,17 @@ export const CashbookApplication = GObject.registerClass(
                 aboutDialog.present(this.active_window);
             });
             this.add_action(show_about_action);
+
+            const show_shortcuts_action = new Gio.SimpleAction({name: 'shortcuts'});
+            show_shortcuts_action.connect('activate', () => {
+                const builder = Gtk.Builder.new_from_resource(
+                    '/io/subho/Cashbook/shortcuts-dialog.ui'
+                );
+                const dialog = builder.get_object('shortcuts_dialog');
+                dialog.present(this.active_window);
+            });
+            this.add_action(show_shortcuts_action);
+            this.set_accels_for_action('app.shortcuts', ['<control>question']);
         }
 
         vfunc_activate() {

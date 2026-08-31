@@ -84,7 +84,7 @@ export const CashbookWindow = GObject.registerClass({
     Template: 'resource:///io/subho/Cashbook/window.ui',
     InternalChildren: [
         'toast_overlay', 'root_stack', 'choose_folder_button', 'split_view',
-        'add_account_button', 'account_list', 'search_entry',
+        'account_list', 'search_entry',
         'add_transaction_button', 'transaction_stack', 'empty_page',
         'empty_action_button', 'transaction_list',
     ],
@@ -99,7 +99,6 @@ export const CashbookWindow = GObject.registerClass({
         this.currentAccount = null;
 
         this._choose_folder_button.connect('clicked', () => this.chooseFolder());
-        this._add_account_button.connect('clicked', () => this.showAccountDialog());
         this._add_transaction_button.connect('clicked', () => this.showTransactionDialog());
         this._empty_action_button.connect('clicked', () => {
             if (this.currentAccount)
@@ -122,6 +121,14 @@ export const CashbookWindow = GObject.registerClass({
             if (row.transaction)
                 this.showTransactionDialog(row.transaction);
         });
+
+        const addAccountAction = new Gio.SimpleAction({ name: 'add-account' });
+        addAccountAction.connect('activate', () => this.showAccountDialog());
+        this.add_action(addAccountAction);
+
+        const changeFolderAction = new Gio.SimpleAction({ name: 'change-data-folder' });
+        changeFolderAction.connect('activate', () => this.showFolderChooser());
+        this.add_action(changeFolderAction);
 
         this.openSavedDirectory();
     }
@@ -166,6 +173,18 @@ export const CashbookWindow = GObject.registerClass({
                 console.debug(`Folder selection closed: ${error.message}`);
             }
         });
+    }
+
+    showFolderChooser() {
+        this.settings.set_string('data-directory', '');
+        this.database = null;
+        this.accounts = [];
+        this.transactions = [];
+        this.currentAccount = null;
+        this._search_entry.text = '';
+        clearChildren(this._account_list);
+        clearChildren(this._transaction_list);
+        this._root_stack.visible_child_name = 'welcome';
     }
 
     loadDirectory(directory) {
