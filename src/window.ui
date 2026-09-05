@@ -194,6 +194,10 @@
         <attribute name="action">win.add-account</attribute>
       </item>
       <item>
+        <attribute name="label" translatable="yes">_Back Up...</attribute>
+        <attribute name="action">win.backup</attribute>
+      </item>
+      <item>
         <attribute name="label" translatable="yes">_Change Data Folder...</attribute>
         <attribute name="action">win.change-data-folder</attribute>
       </item>

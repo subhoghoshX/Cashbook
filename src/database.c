@@ -1,9 +1,12 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later */
 
+#include <errno.h>
+#include <fcntl.h>
 #include <sqlite3.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 static void
 print_json_string(const char *value)
@@ -236,6 +239,47 @@ update_transaction(sqlite3 *db, char **values)
     return EXIT_SUCCESS;
 }
 
+static int
+backup_database(sqlite3 *db, const char *path)
+{
+    sqlite3 *destination = NULL;
+    sqlite3_backup *backup = NULL;
+    int result = EXIT_FAILURE;
+    int fd = open(path, O_WRONLY | O_CREAT | O_EXCL, 0600);
+
+    /* Reserve a private file without overwriting an existing backup or database. */
+    if (fd < 0) {
+        fprintf(stderr, "Could not create backup: %s\n", strerror(errno));
+        return EXIT_FAILURE;
+    }
+    close(fd);
+
+    if (sqlite3_open_v2(path, &destination, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
+        fail(destination, "Could not open backup file");
+        goto out;
+    }
+    backup = sqlite3_backup_init(destination, "main", db, "main");
+    if (!backup) {
+        fail(destination, "Could not start backup");
+        goto out;
+    }
+
+    int step_result = sqlite3_backup_step(backup, -1);
+    int finish_result = sqlite3_backup_finish(backup);
+    if (step_result != SQLITE_DONE || finish_result != SQLITE_OK) {
+        fprintf(stderr, "Could not complete backup: %s\n",
+                sqlite3_errstr(step_result != SQLITE_DONE ? step_result : finish_result));
+        goto out;
+    }
+    result = EXIT_SUCCESS;
+
+out:
+    sqlite3_close(destination);
+    if (result != EXIT_SUCCESS)
+        unlink(path);
+    return result;
+}
+
 int
 main(int argc, char **argv)
 {
@@ -258,12 +302,22 @@ main(int argc, char **argv)
             return EXIT_FAILURE;
         }
     }
-    if (sqlite3_open(argv[1], &db) != SQLITE_OK) {
+    int is_backup = strcmp(argv[2], "backup") == 0;
+    if (is_backup && argc != 4) {
+        fputs("Usage: cashbook-db DATABASE backup DESTINATION\n", stderr);
+        return EXIT_FAILURE;
+    }
+    int flags = is_backup ? SQLITE_OPEN_READONLY : SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;
+    if (sqlite3_open_v2(argv[1], &db, flags, NULL) != SQLITE_OK) {
         result = fail(db, "Could not open database");
         sqlite3_close(db);
         return result;
     }
     sqlite3_busy_timeout(db, 3000);
+    if (is_backup) {
+        result = backup_database(db, argv[3]);
+        goto out;
+    }
     if (initialize(db) != EXIT_SUCCESS)
         goto out;
 

@@ -77,6 +77,25 @@ class Database {
     updateTransaction(transactionId, type, amount, date, description, isTransfer) {
         this.run('update-transaction', transactionId, type, amount, date, description, Number(isTransfer));
     }
+
+    backup(path) {
+        return new Promise((resolve, reject) => {
+            const process = Gio.Subprocess.new(
+                ['cashbook-db', this.path, 'backup', path],
+                Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
+            );
+            process.communicate_utf8_async(null, null, (source, result) => {
+                try {
+                    const [, , stderr] = source.communicate_utf8_finish(result);
+                    if (!source.get_successful())
+                        throw new Error(stderr.trim() || 'The backup failed.');
+                    resolve();
+                } catch (error) {
+                    reject(error);
+                }
+            });
+        });
+    }
 }
 
 export const CashbookWindow = GObject.registerClass({
@@ -130,6 +149,10 @@ export const CashbookWindow = GObject.registerClass({
         changeFolderAction.connect('activate', () => this.showFolderChooser());
         this.add_action(changeFolderAction);
 
+        this.backupAction = new Gio.SimpleAction({ name: 'backup', enabled: false });
+        this.backupAction.connect('activate', () => this.chooseBackupFolder());
+        this.add_action(this.backupAction);
+
         this.openSavedDirectory();
     }
 
@@ -175,9 +198,40 @@ export const CashbookWindow = GObject.registerClass({
         });
     }
 
+    chooseBackupFolder() {
+        const database = this.database;
+        if (!database)
+            return;
+
+        this.backupAction.enabled = false;
+        const dialog = new Gtk.FileDialog({ title: 'Choose Backup Folder', modal: true });
+        dialog.select_folder(this, null, async (source, result) => {
+            try {
+                const folder = source.select_folder_finish(result);
+                const path = folder.get_path();
+                if (!path) {
+                    this.showToast('Choose a folder on this device.');
+                    return;
+                }
+                const timestamp = GLib.DateTime.new_now_local().format('%Y-%m-%d_%H-%M-%S');
+                const filename = `cashbook-backup-${timestamp}.sqlite3`;
+                this.showToast('Creating backup...');
+                await database.backup(GLib.build_filenamev([path, filename]));
+                this.showToast(`Backup saved as ${filename}`);
+            } catch (error) {
+                if (!error.matches?.(Gtk.DialogError, Gtk.DialogError.DISMISSED) &&
+                    !error.matches?.(Gtk.DialogError, Gtk.DialogError.CANCELLED))
+                    this.showToast(`Could not create backup: ${error.message}`);
+            } finally {
+                this.backupAction.enabled = this.database !== null;
+            }
+        });
+    }
+
     showFolderChooser() {
         this.settings.set_string('data-directory', '');
         this.database = null;
+        this.backupAction.enabled = false;
         this.accounts = [];
         this.transactions = [];
         this.currentAccount = null;
@@ -191,11 +245,13 @@ export const CashbookWindow = GObject.registerClass({
         try {
             const path = GLib.build_filenamev([directory, 'cashbook.sqlite3']);
             this.database = new Database(path);
+            this.backupAction.enabled = true;
             this._root_stack.visible_child_name = 'cashbook';
             this.loadAccounts();
             return true;
         } catch (error) {
             this.database = null;
+            this.backupAction.enabled = false;
             this._root_stack.visible_child_name = 'welcome';
             this.showToast(`Could not open this folder: ${error.message}`);
             return false;

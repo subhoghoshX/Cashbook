@@ -1,11 +1,15 @@
 pkgdatadir = get_option('datadir') / meson.project_name()
 gnome = import('gnome')
 
-executable(
+database_helper = executable(
   'cashbook-db',
   'database.c',
   dependencies: dependency('sqlite3'),
   install: true,
+)
+
+test('database-backup', find_program('python3'),
+  args: [files('test-backup.py'), database_helper],
 )
 
 src_res = gnome.compile_resources('io.subho.Cashbook.src',
