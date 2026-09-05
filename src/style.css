@@ -24,12 +24,24 @@
   border-bottom: 1px solid alpha(@borders, 0.45);
 }
 
-.transaction-row.credit {
-  box-shadow: inset 3px 0 @success_color;
+.transaction-row.month-color-0 {
+  box-shadow: inset 3px 0 #3584e4;
 }
 
-.transaction-row.debit {
-  box-shadow: inset 3px 0 @error_color;
+.transaction-row.month-color-1 {
+  box-shadow: inset 3px 0 #9141ac;
+}
+
+.transaction-row.month-color-2 {
+  box-shadow: inset 3px 0 #2190a4;
+}
+
+.transaction-row.month-color-3 {
+  box-shadow: inset 3px 0 #c07812;
+}
+
+.transaction-row.month-color-4 {
+  box-shadow: inset 3px 0 #c45182;
 }
 
 .transaction-type {

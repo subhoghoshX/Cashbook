@@ -336,9 +336,11 @@ export const CashbookWindow = GObject.registerClass({
             tooltip_text: 'Double-click to edit',
         });
         row.transaction = transaction;
+        const [year, month] = transaction.date.split('-').map(Number);
+        const monthColor = (year * 12 + month - 1) % 5;
         const box = new Gtk.Box({
             spacing: 18,
-            css_classes: ['transaction-row', transaction.type],
+            css_classes: ['transaction-row', `month-color-${monthColor}`],
         });
         const date = new Gtk.Label({
             label: transaction.date,
