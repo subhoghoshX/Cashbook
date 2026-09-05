@@ -4,6 +4,7 @@
     "runtime-version" : "50",
     "sdk" : "org.gnome.Sdk",
     "command" : "io.subho.Cashbook",
+    "default-branch" : "stable",
     "finish-args" : [
         "--share=ipc",
         "--socket=fallback-x11",
@@ -26,11 +27,12 @@
             "name" : "cashbook",
             "builddir" : true,
             "buildsystem" : "meson",
+            "run-tests" : true,
             "sources" : [
                 {
-                    "type" : "git",
-                    "url" : "file:///home/subho/Documents/Cashbook",
-                    "branch" : "master"
+                    "type" : "dir",
+                    "path" : ".",
+                    "skip" : [ ".git", ".flatpak-builder", "build", "build-flatpak", "build-dir", "repo", "dist" ]
                 }
             ]
         }

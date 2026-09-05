@@ -1,0 +1,65 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Check release version
+        run: |
+          python3 - <<'PY'
+          import os
+          import pathlib
+          import re
+          import xml.etree.ElementTree as ET
+
+          version = re.search(r"version:\s*'([^']+)'", pathlib.Path('meson.build').read_text())[1]
+          if os.environ['GITHUB_REF_NAME'] != f'v{version}':
+              raise SystemExit('Tag must match the version in meson.build')
+          metadata = ET.parse('data/io.subho.Cashbook.metainfo.xml.in')
+          if metadata.find('./releases/release').get('version') != version:
+              raise SystemExit('Latest AppStream release must match the Meson version')
+          PY
+
+      - name: Install build tools and GNOME SDK
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+          flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+          flatpak install --user --noninteractive flathub org.gnome.Platform//50 org.gnome.Sdk//50
+
+      - name: Build and test
+        run: flatpak-builder --user --disable-rofiles-fuse --repo=repo build-dir io.subho.Cashbook.json
+
+      - name: Create installer
+        run: |
+          mkdir -p dist
+          flatpak build-bundle --arch=x86_64 --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo repo dist/Cashbook-x86_64.flatpak io.subho.Cashbook stable
+
+      - name: Calculate checksum
+        working-directory: dist
+        run: sha256sum Cashbook-x86_64.flatpak > SHA256SUMS
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/Cashbook-x86_64.flatpak dist/SHA256SUMS \
+            --verify-tag --draft --title "Cashbook ${GITHUB_REF_NAME#v}" \
+            --notes 'Linux x86_64 Flatpak installer. See the README for installation, updates, and removal. Cashbook is hosted on GitHub; Flathub supplies only the GNOME runtime. App updates require installing a newer bundle.'
+          gh release edit "$GITHUB_REF_NAME" --draft=false --latest
