@@ -155,7 +155,7 @@ list_transactions(sqlite3 *db, const char *account_id)
     const char *sql =
         "SELECT id, type, amount_paise, transaction_date, description "
         "FROM transactions WHERE account_id = ? "
-        "ORDER BY transaction_date DESC, id DESC";
+        "ORDER BY transaction_date ASC, id ASC";
     int first = 1;
 
     if (prepare(db, &statement, sql) != EXIT_SUCCESS)
