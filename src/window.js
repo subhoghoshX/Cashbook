@@ -346,6 +346,7 @@ export const CashbookWindow = GObject.registerClass({
             label: transaction.date,
             xalign: 0,
             width_request: 120,
+            css_classes: ['monospace'],
         });
         const typeBox = new Gtk.Box({ width_request: 96, halign: Gtk.Align.START });
         const type = new Gtk.Label({
