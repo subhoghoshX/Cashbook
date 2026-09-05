@@ -62,7 +62,7 @@ initialize(sqlite3 *db)
         " id INTEGER PRIMARY KEY,"
         " account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,"
         " type TEXT NOT NULL CHECK(type IN ('credit', 'debit')),"
-        " amount_paise INTEGER NOT NULL CHECK(amount_paise > 0),"
+        " amount INTEGER NOT NULL CHECK(amount > 0),"
         " transaction_date TEXT NOT NULL,"
         " description TEXT NOT NULL DEFAULT '',"
         " is_transfer INTEGER NOT NULL DEFAULT 0 CHECK(is_transfer IN (0,1)),"
@@ -86,7 +86,7 @@ list_accounts(sqlite3 *db)
     sqlite3_stmt *statement = NULL;
     const char *sql =
         "SELECT a.id, a.name, a.icon, "
-        "COALESCE(SUM(CASE WHEN t.type = 'credit' THEN t.amount_paise ELSE -t.amount_paise END), 0) "
+        "COALESCE(SUM(CASE WHEN t.type = 'credit' THEN t.amount ELSE -t.amount END), 0) "
         "FROM accounts a LEFT JOIN transactions t ON t.account_id = a.id "
         "GROUP BY a.id ORDER BY a.created_at, a.id";
     int first = 1;
@@ -154,7 +154,7 @@ list_transactions(sqlite3 *db, const char *account_id)
 {
     sqlite3_stmt *statement = NULL;
     const char *sql =
-        "SELECT id, type, amount_paise, transaction_date, description, is_transfer "
+        "SELECT id, type, amount, transaction_date, description, is_transfer "
         "FROM transactions WHERE account_id = ? "
         "ORDER BY transaction_date ASC, id ASC";
     int first = 1;
@@ -192,7 +192,7 @@ add_transaction(sqlite3 *db, char **values)
 {
     sqlite3_stmt *statement = NULL;
     const char *sql =
-        "INSERT INTO transactions(account_id, type, amount_paise, transaction_date, description, is_transfer) "
+        "INSERT INTO transactions(account_id, type, amount, transaction_date, description, is_transfer) "
         "VALUES(?, ?, ?, ?, ?, ?)";
 
     if (prepare(db, &statement, sql) != EXIT_SUCCESS)
@@ -217,7 +217,7 @@ update_transaction(sqlite3 *db, char **values)
     sqlite3_stmt *statement = NULL;
     const char *sql =
         "UPDATE transactions "
-        "SET type = ?, amount_paise = ?, transaction_date = ?, description = ?, is_transfer = ? "
+        "SET type = ?, amount = ?, transaction_date = ?, description = ?, is_transfer = ? "
         "WHERE id = ?";
 
     if (prepare(db, &statement, sql) != EXIT_SUCCESS)
@@ -250,7 +250,7 @@ main(int argc, char **argv)
         strcmp(argv[2], "update-transaction") == 0) {
         if (argc != 9) {
             fputs("Usage: cashbook-db DATABASE add-transaction|update-transaction "
-                  "ID TYPE AMOUNT_PAISE DATE DESCRIPTION IS_TRANSFER\n", stderr);
+                  "ID TYPE AMOUNT DATE DESCRIPTION IS_TRANSFER\n", stderr);
             return EXIT_FAILURE;
         }
         if (strcmp(argv[8], "0") != 0 && strcmp(argv[8], "1") != 0) {
