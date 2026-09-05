@@ -497,7 +497,10 @@ export const CashbookWindow = GObject.registerClass({
             text: transaction?.date ?? GLib.DateTime.new_now_local().format('%F'),
             activates_default: true,
         });
-        const calendarPopover = new Gtk.Popover({ child: calendar });
+        const calendarPopover = new Gtk.Popover({
+            child: calendar,
+            css_classes: ['transaction-calendar-popover'],
+        });
         dateEntry.add_suffix(new Gtk.MenuButton({
             icon_name: 'x-office-calendar-symbolic',
             tooltip_text: _('Choose a date'),
@@ -523,6 +526,8 @@ export const CashbookWindow = GObject.registerClass({
 
         const dialog = new Adw.AlertDialog({
             heading: editing ? _('Edit Transaction') : _('Add Transaction'),
+            content_width: 440,
+            follows_content_size: false,
             body: editing
                 ? `Update this transaction in ${this.currentAccount.name}.`
                 : `Record a credit or debit for ${this.currentAccount.name}.`,

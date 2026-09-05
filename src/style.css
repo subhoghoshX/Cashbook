@@ -54,11 +54,14 @@
   font-weight: 700;
 }
 
+popover.transaction-calendar-popover > contents {
+  padding: 0;
+}
+
 calendar.transaction-calendar {
   padding: 8px;
-  background-color: @card_bg_color;
-  border: 1px solid alpha(@borders, 0.8);
-  border-radius: 12px;
+  background-color: transparent;
+  border: none;
 }
 
 calendar.transaction-calendar header {
