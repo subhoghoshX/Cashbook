@@ -70,12 +70,12 @@ class Database {
         return JSON.parse(this.run('list-transactions', accountId));
     }
 
-    addTransaction(accountId, type, amount, date, description) {
-        this.run('add-transaction', accountId, type, amount, date, description);
+    addTransaction(accountId, type, amount, date, description, isTransfer) {
+        this.run('add-transaction', accountId, type, amount, date, description, Number(isTransfer));
     }
 
-    updateTransaction(transactionId, type, amount, date, description) {
-        this.run('update-transaction', transactionId, type, amount, date, description);
+    updateTransaction(transactionId, type, amount, date, description, isTransfer) {
+        this.run('update-transaction', transactionId, type, amount, date, description, Number(isTransfer));
     }
 }
 
@@ -471,6 +471,11 @@ export const CashbookWindow = GObject.registerClass({
 
         const typeRow = new Adw.ActionRow({ title: _('Type') });
         typeRow.add_suffix(typeGroup);
+        const transferRow = new Adw.SwitchRow({
+            title: _('Transfer between accounts'),
+            subtitle: _('Mark only; the other account is not updated.'),
+            active: transaction?.is_transfer ?? false,
+        });
 
         const amountEntry = new Adw.EntryRow({
             title: _('Amount'),
@@ -481,6 +486,7 @@ export const CashbookWindow = GObject.registerClass({
 
         const details = new Adw.PreferencesGroup();
         details.add(typeRow);
+        details.add(transferRow);
         details.add(amountEntry);
 
         const calendar = new Gtk.Calendar({
@@ -587,7 +593,8 @@ export const CashbookWindow = GObject.registerClass({
                         typeGroup.active_name,
                         getAmount(),
                         date,
-                        descriptionEntry.text.trim()
+                        descriptionEntry.text.trim(),
+                        transferRow.active
                     );
                 } else {
                     this.database.addTransaction(
@@ -595,7 +602,8 @@ export const CashbookWindow = GObject.registerClass({
                         typeGroup.active_name,
                         getAmount(),
                         date,
-                        descriptionEntry.text.trim()
+                        descriptionEntry.text.trim(),
+                        transferRow.active
                     );
                     this._search_entry.text = '';
                 }

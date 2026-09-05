@@ -65,6 +65,7 @@ initialize(sqlite3 *db)
         " amount_paise INTEGER NOT NULL CHECK(amount_paise > 0),"
         " transaction_date TEXT NOT NULL,"
         " description TEXT NOT NULL DEFAULT '',"
+        " is_transfer INTEGER NOT NULL DEFAULT 0 CHECK(is_transfer IN (0,1)),"
         " created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP"
         ");"
         "CREATE INDEX IF NOT EXISTS transactions_account_date "
@@ -153,7 +154,7 @@ list_transactions(sqlite3 *db, const char *account_id)
 {
     sqlite3_stmt *statement = NULL;
     const char *sql =
-        "SELECT id, type, amount_paise, transaction_date, description "
+        "SELECT id, type, amount_paise, transaction_date, description, is_transfer "
         "FROM transactions WHERE account_id = ? "
         "ORDER BY transaction_date ASC, id ASC";
     int first = 1;
@@ -176,6 +177,8 @@ list_transactions(sqlite3 *db, const char *account_id)
         print_json_string((const char *)sqlite3_column_text(statement, 3));
         fputs(",\"description\":", stdout);
         print_json_string((const char *)sqlite3_column_text(statement, 4));
+        fputs(",\"is_transfer\":", stdout);
+        fputs(sqlite3_column_int(statement, 5) ? "true" : "false", stdout);
         putchar('}');
         first = 0;
     }
@@ -189,8 +192,8 @@ add_transaction(sqlite3 *db, char **values)
 {
     sqlite3_stmt *statement = NULL;
     const char *sql =
-        "INSERT INTO transactions(account_id, type, amount_paise, transaction_date, description) "
-        "VALUES(?, ?, ?, ?, ?)";
+        "INSERT INTO transactions(account_id, type, amount_paise, transaction_date, description, is_transfer) "
+        "VALUES(?, ?, ?, ?, ?, ?)";
 
     if (prepare(db, &statement, sql) != EXIT_SUCCESS)
         return EXIT_FAILURE;
@@ -199,6 +202,7 @@ add_transaction(sqlite3 *db, char **values)
     sqlite3_bind_int64(statement, 3, strtoll(values[2], NULL, 10));
     sqlite3_bind_text(statement, 4, values[3], -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(statement, 5, values[4], -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(statement, 6, values[5][0] - '0');
     if (sqlite3_step(statement) != SQLITE_DONE) {
         sqlite3_finalize(statement);
         return fail(db, "Could not add transaction");
@@ -213,7 +217,7 @@ update_transaction(sqlite3 *db, char **values)
     sqlite3_stmt *statement = NULL;
     const char *sql =
         "UPDATE transactions "
-        "SET type = ?, amount_paise = ?, transaction_date = ?, description = ? "
+        "SET type = ?, amount_paise = ?, transaction_date = ?, description = ?, is_transfer = ? "
         "WHERE id = ?";
 
     if (prepare(db, &statement, sql) != EXIT_SUCCESS)
@@ -222,7 +226,8 @@ update_transaction(sqlite3 *db, char **values)
     sqlite3_bind_int64(statement, 2, strtoll(values[2], NULL, 10));
     sqlite3_bind_text(statement, 3, values[3], -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(statement, 4, values[4], -1, SQLITE_TRANSIENT);
-    sqlite3_bind_int64(statement, 5, strtoll(values[0], NULL, 10));
+    sqlite3_bind_int(statement, 5, values[5][0] - '0');
+    sqlite3_bind_int64(statement, 6, strtoll(values[0], NULL, 10));
     if (sqlite3_step(statement) != SQLITE_DONE) {
         sqlite3_finalize(statement);
         return fail(db, "Could not update transaction");
@@ -240,6 +245,18 @@ main(int argc, char **argv)
     if (argc < 3) {
         fputs("Usage: cashbook-db DATABASE COMMAND [VALUES...]\n", stderr);
         return EXIT_FAILURE;
+    }
+    if (strcmp(argv[2], "add-transaction") == 0 ||
+        strcmp(argv[2], "update-transaction") == 0) {
+        if (argc != 9) {
+            fputs("Usage: cashbook-db DATABASE add-transaction|update-transaction "
+                  "ID TYPE AMOUNT_PAISE DATE DESCRIPTION IS_TRANSFER\n", stderr);
+            return EXIT_FAILURE;
+        }
+        if (strcmp(argv[8], "0") != 0 && strcmp(argv[8], "1") != 0) {
+            fputs("IS_TRANSFER must be 0 or 1\n", stderr);
+            return EXIT_FAILURE;
+        }
     }
     if (sqlite3_open(argv[1], &db) != SQLITE_OK) {
         result = fail(db, "Could not open database");
@@ -260,9 +277,9 @@ main(int argc, char **argv)
         result = update_account(db, argv[3], argv[4], argv[5]);
     else if (strcmp(argv[2], "list-transactions") == 0 && argc == 4)
         result = list_transactions(db, argv[3]);
-    else if (strcmp(argv[2], "add-transaction") == 0 && argc == 8)
+    else if (strcmp(argv[2], "add-transaction") == 0 && argc == 9)
         result = add_transaction(db, &argv[3]);
-    else if (strcmp(argv[2], "update-transaction") == 0 && argc == 8)
+    else if (strcmp(argv[2], "update-transaction") == 0 && argc == 9)
         result = update_transaction(db, &argv[3]);
     else
         fputs("Unknown command or wrong number of values\n", stderr);
