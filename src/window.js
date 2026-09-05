@@ -478,10 +478,6 @@ export const CashbookWindow = GObject.registerClass({
             input_purpose: Gtk.InputPurpose.NUMBER,
             activates_default: true,
         });
-        amountEntry.add_prefix(new Gtk.Label({
-            label: '₹',
-            css_classes: ['title-3', 'dim-label'],
-        }));
 
         const details = new Adw.PreferencesGroup();
         details.add(typeRow);
