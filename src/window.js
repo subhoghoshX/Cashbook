@@ -492,10 +492,20 @@ export const CashbookWindow = GObject.registerClass({
             hexpand: true,
             css_classes: ['transaction-calendar'],
         });
-        if (editing) {
-            const [year, month, day] = transaction.date.split('-').map(Number);
-            calendar.set_date(GLib.DateTime.new_local(year, month, day, 0, 0, 0));
-        }
+        const dateEntry = new Adw.EntryRow({
+            title: _('Date (YYYY-MM-DD)'),
+            text: transaction?.date ?? GLib.DateTime.new_now_local().format('%F'),
+            activates_default: true,
+        });
+        const calendarPopover = new Gtk.Popover({ child: calendar });
+        dateEntry.add_suffix(new Gtk.MenuButton({
+            icon_name: 'x-office-calendar-symbolic',
+            tooltip_text: _('Choose a date'),
+            valign: Gtk.Align.CENTER,
+            popover: calendarPopover,
+            css_classes: ['flat'],
+        }));
+        details.add(dateEntry);
         const descriptionEntry = new Adw.EntryRow({
             title: _('Description (optional)'),
             text: transaction?.description ?? '',
@@ -509,8 +519,6 @@ export const CashbookWindow = GObject.registerClass({
             spacing: 12,
         });
         form.append(details);
-        form.append(new Gtk.Label({ label: _('Date'), xalign: 0, css_classes: ['heading'] }));
-        form.append(calendar);
         form.append(descriptionGroup);
 
         const dialog = new Adw.AlertDialog({
@@ -523,7 +531,6 @@ export const CashbookWindow = GObject.registerClass({
         dialog.add_response('cancel', _('Cancel'));
         dialog.add_response('save', editing ? _('Save') : _('Add'));
         dialog.set_response_appearance('save', Adw.ResponseAppearance.SUGGESTED);
-        dialog.set_response_enabled('save', editing);
         dialog.default_response = 'save';
         dialog.close_response = 'cancel';
 
@@ -533,16 +540,45 @@ export const CashbookWindow = GObject.registerClass({
                 return 0;
             return Math.round(Number(value) * 100);
         };
-        amountEntry.connect('changed', () => {
-            dialog.set_response_enabled('save', getAmount() > 0);
+        const getDate = () => {
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(dateEntry.text))
+                return null;
+            const [year, month, day] = dateEntry.text.split('-').map(Number);
+            if (month < 1 || month > 12 || !GLib.Date.valid_dmy(day, month, year))
+                return null;
+            return GLib.DateTime.new_local(year, month, day, 12, 0, 0);
+        };
+        const updateValidation = () => {
+            dialog.set_response_enabled('save', getAmount() > 0 && getDate() !== null);
+        };
+        let syncingDate = false;
+        const syncCalendar = () => {
+            const date = getDate();
+            if (date && !syncingDate) {
+                syncingDate = true;
+                calendar.set_date(date);
+                syncingDate = false;
+            }
+            updateValidation();
+        };
+        amountEntry.connect('changed', updateValidation);
+        dateEntry.connect('changed', syncCalendar);
+        calendar.connect('day-selected', () => {
+            if (syncingDate)
+                return;
+            syncingDate = true;
+            dateEntry.text = calendar.get_date().format('%F');
+            syncingDate = false;
+            calendarPopover.popdown();
         });
+        syncCalendar();
 
         dialog.connect('response', (_dialog, response) => {
             if (response !== 'save')
                 return;
 
             const accountId = this.currentAccount.id;
-            const date = calendar.get_date().format('%F');
+            const date = dateEntry.text;
             try {
                 if (editing) {
                     this.database.updateTransaction(
