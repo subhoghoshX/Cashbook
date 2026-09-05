@@ -69,3 +69,9 @@ git push origin v0.1.0
 ```
 
 Use a new version tag for each subsequent release. The GitHub Actions `Release` workflow builds and tests the tagged checkout, then publishes `Cashbook-x86_64.flatpak` and `SHA256SUMS`. It uses GitHub's built-in token; no personal access token or signing key is required. The bundle is not GPG-signed and has no update repository. Download it only from this repository's releases.
+
+If a tag push does not start a build, you can publish that existing tag through GitHub CLI without moving it:
+
+```sh
+gh workflow run release.yml --ref master -f tag=v0.1.0
+```
