@@ -92,20 +92,24 @@
                             <child type="top">
                               <object class="AdwHeaderBar" id="content_header">
                                 <property name="title-widget">
-                                  <object class="GtkSearchEntry" id="search_entry">
-                                    <property name="placeholder-text" translatable="yes">Search transactions</property>
-                                    <property name="width-chars">28</property>
-                                    <property name="visible">False</property>
+                                  <object class="GtkBox">
+                                    <property name="spacing">6</property>
+                                    <child>
+                                      <object class="GtkSearchEntry" id="search_entry">
+                                        <property name="placeholder-text" translatable="yes">Search transactions</property>
+                                        <property name="width-chars">28</property>
+                                        <property name="visible">False</property>
+                                      </object>
+                                    </child>
+                                    <child>
+                                      <object class="GtkButton" id="add_transaction_button">
+                                        <property name="icon-name">list-add-symbolic</property>
+                                        <property name="tooltip-text" translatable="yes">Add Transaction</property>
+                                        <property name="sensitive">False</property>
+                                      </object>
+                                    </child>
                                   </object>
                                 </property>
-                                <child type="end">
-                                  <object class="GtkButton" id="add_transaction_button">
-                                    <property name="icon-name">list-add-symbolic</property>
-                                    <property name="tooltip-text" translatable="yes">Add Transaction</property>
-                                    <property name="sensitive">False</property>
-                                    <style><class name="suggested-action"/></style>
-                                  </object>
-                                </child>
                               </object>
                             </child>
                             <property name="content">
