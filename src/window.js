@@ -329,7 +329,6 @@ export const CashbookWindow = GObject.registerClass({
     }
 
     createTransactionRow(transaction) {
-        const typeTitle = transaction.type === 'credit' ? 'Credit' : 'Debit';
         const row = new Gtk.ListBoxRow({
             activatable: true,
             selectable: false,
@@ -348,11 +347,6 @@ export const CashbookWindow = GObject.registerClass({
             width_request: 120,
             css_classes: ['monospace'],
         });
-        const typeBox = new Gtk.Box({ width_request: 96, halign: Gtk.Align.START });
-        const type = new Gtk.Label({
-            label: typeTitle,
-            css_classes: ['transaction-type', transaction.type],
-        });
         const description = new Gtk.Label({
             label: transaction.description || 'No description',
             xalign: 0,
@@ -369,9 +363,7 @@ export const CashbookWindow = GObject.registerClass({
             css_classes: [transaction.type === 'credit' ? 'amount-credit' : 'amount-debit'],
         });
 
-        typeBox.append(type);
         box.append(date);
-        box.append(typeBox);
         box.append(description);
         box.append(amount);
         row.child = box;
