@@ -15,7 +15,6 @@
 .table-header {
   padding: 10px 22px;
   border-bottom: 1px solid alpha(@borders, 0.8);
-  color: @dim_label_color;
   font-size: 0.85em;
   font-weight: 700;
 }
