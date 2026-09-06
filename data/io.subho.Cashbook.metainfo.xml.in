@@ -28,6 +28,11 @@
   </branding>
 
   <releases>
+    <release version="0.1.1" date="2026-09-06">
+      <description>
+        <p>Replace the generic application icons with a green ledger and gold rupee coin, including a matching symbolic icon.</p>
+      </description>
+    </release>
     <release version="0.1.0" date="2026-09-05" />
   </releases>
 </component>
