@@ -44,6 +44,7 @@ export const CashbookApplication = GObject.registerClass(
             });
             this.add_action(quit_action);
             this.set_accels_for_action('app.quit', ['<control>q']);
+            this.set_accels_for_action('win.add-transaction', ['<control>n']);
 
             const show_about_action = new Gio.SimpleAction({name: 'about'});
             show_about_action.connect('activate', action => {

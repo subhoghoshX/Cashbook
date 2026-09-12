@@ -145,6 +145,13 @@ export const CashbookWindow = GObject.registerClass({
         addAccountAction.connect('activate', () => this.showAccountDialog());
         this.add_action(addAccountAction);
 
+        const addTransactionAction = new Gio.SimpleAction({ name: 'add-transaction' });
+        addTransactionAction.connect('activate', () => {
+            if (this.database && !this.get_visible_dialog())
+                this.showTransactionDialog();
+        });
+        this.add_action(addTransactionAction);
+
         const changeFolderAction = new Gio.SimpleAction({ name: 'change-data-folder' });
         changeFolderAction.connect('activate', () => this.showFolderChooser());
         this.add_action(changeFolderAction);

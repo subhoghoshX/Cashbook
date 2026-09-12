@@ -6,6 +6,12 @@
         <property name="title" translatable="yes">Shortcuts</property>
         <child>
           <object class="AdwShortcutsItem">
+            <property name="title" translatable="yes" context="shortcut window">Add Transaction</property>
+            <property name="action-name">win.add-transaction</property>
+          </object>
+        </child>
+        <child>
+          <object class="AdwShortcutsItem">
             <property name="title" translatable="yes" context="shortcut window">Show Shortcuts</property>
             <property name="action-name">app.shortcuts</property>
           </object>
