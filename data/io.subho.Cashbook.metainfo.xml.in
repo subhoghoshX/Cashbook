@@ -28,6 +28,11 @@
   </branding>
 
   <releases>
+    <release version="0.1.2" date="2026-09-12">
+      <description>
+        <p>Press Ctrl+N to open the Add Transaction dialog for the selected account. The shortcut is also listed in the keyboard shortcuts dialog.</p>
+      </description>
+    </release>
     <release version="0.1.1" date="2026-09-06">
       <description>
         <p>Replace the generic application icons with a green ledger and gold rupee coin, including a matching symbolic icon.</p>

@@ -52,7 +52,7 @@ export const CashbookApplication = GObject.registerClass(
                     application_name: 'Cashbook',
                     application_icon: 'io.subho.Cashbook',
                     developer_name: 'Subho',
-                    version: '0.1.1',
+                    version: '0.1.2',
                     developers: [
                         'Subho'
                     ],
