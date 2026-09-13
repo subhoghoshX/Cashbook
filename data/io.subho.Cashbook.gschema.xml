@@ -5,5 +5,10 @@
 			<default>''</default>
 			<summary>Folder containing the Cashbook database</summary>
 		</key>
+		<key name="use-last-transaction-date" type="b">
+			<default>false</default>
+			<summary>Use the last-added transaction's date for new transactions</summary>
+			<description>Use the date of the transaction most recently added to the selected account. Fall back to today when the account has no transactions.</description>
+		</key>
 	</schema>
 </schemalist>

@@ -8,6 +8,8 @@ Use **Back Up** in the sidebar menu to save a timestamped SQLite snapshot of all
 
 Use **Export as CSV** in the sidebar hamburger menu to save all transactions for the selected account, even when search is active. The CSV includes date, description, credit/debit type, amount in rupees, and a transfer flag. Amounts use two decimal places without currency symbols or grouping separators. An account with no transactions exports just the column headers.
 
+Open **Preferences** in the hamburger menu to choose the default date for new transactions: today's date or the date of the last transaction added to the selected account, even if it was backdated. Empty accounts use today's date. The choice is saved across restarts; editing a transaction still shows its existing date.
+
 ## Install
 
 Cashbook is available for **Linux x86_64** as a Flatpak bundle on [GitHub Releases](https://github.com/subhoghoshX/Cashbook/releases/latest). Windows, macOS, and ARM installers are not currently provided.
@@ -59,7 +61,7 @@ flatpak-builder --user --force-clean --install build-dir io.subho.Cashbook.json
 flatpak run io.subho.Cashbook
 ```
 
-The build runs the database backup and CSV export tests and validates the desktop entry, AppStream metadata, and settings schema.
+The build tests database backups, CSV export, and the default transaction date. It also validates the desktop entry, AppStream metadata, and settings schema.
 
 ## Publish a release
 

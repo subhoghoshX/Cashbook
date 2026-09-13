@@ -30,6 +30,10 @@ data_res = gnome.compile_resources('io.subho.Cashbook.data',
   install_dir: pkgdatadir,
 )
 
+test('transaction-date', find_program('gjs'),
+  args: ['-m', files('test-transaction-date.js'), src_res, data_res],
+)
+
 bin_conf = configuration_data()
 bin_conf.set('GJS', find_program('gjs').full_path())
 bin_conf.set('PACKAGE_VERSION', meson.project_version())

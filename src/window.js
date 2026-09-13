@@ -166,11 +166,41 @@ export const CashbookWindow = GObject.registerClass({
         this.exportCsvAction.connect('activate', () => this.exportCsv());
         this.add_action(this.exportCsvAction);
 
+        const preferencesAction = new Gio.SimpleAction({ name: 'preferences' });
+        preferencesAction.connect('activate', () => this.showPreferences());
+        this.add_action(preferencesAction);
+
         this.openSavedDirectory();
     }
 
     showToast(message) {
         this._toast_overlay.add_toast(new Adw.Toast({ title: message, timeout: 4 }));
+    }
+
+    showPreferences() {
+        const dateGroup = new Adw.ToggleGroup({
+            homogeneous: true,
+            valign: Gtk.Align.CENTER,
+        });
+        dateGroup.add(new Adw.Toggle({ name: 'today', label: _('Today') }));
+        dateGroup.add(new Adw.Toggle({ name: 'last-transaction', label: _('Last transaction') }));
+        dateGroup.active_name = this.settings.get_boolean('use-last-transaction-date')
+            ? 'last-transaction' : 'today';
+        dateGroup.connect('notify::active-name', () => {
+            this.settings.set_boolean('use-last-transaction-date', dateGroup.active_name === 'last-transaction');
+        });
+        const dateRow = new Adw.ActionRow({ title: _('Default transaction date') });
+        dateRow.add_suffix(dateGroup);
+        const group = new Adw.PreferencesGroup({
+            title: _('Transactions'),
+            margin_bottom: 32,
+        });
+        group.add(dateRow);
+        const page = new Adw.PreferencesPage();
+        page.add(group);
+        const dialog = new Adw.PreferencesDialog({ title: _('Preferences') });
+        dialog.add(page);
+        dialog.present(this);
     }
 
     openSavedDirectory() {
@@ -577,6 +607,22 @@ export const CashbookWindow = GObject.registerClass({
         nameEntry.grab_focus();
     }
 
+    getDefaultTransactionDate() {
+        if (this.settings.get_boolean('use-last-transaction-date') && this.currentAccount) {
+            try {
+                const transactions = this.database.listTransactions(this.currentAccount.id);
+                // The list is sorted by date, but IDs follow insertion order.
+                const lastAdded = transactions.reduce((last, transaction) =>
+                    !last || transaction.id > last.id ? transaction : last, null);
+                if (lastAdded)
+                    return lastAdded.date;
+            } catch (error) {
+                this.showToast(`Could not load the last transaction date: ${error.message}`);
+            }
+        }
+        return GLib.DateTime.new_now_local().format('%F');
+    }
+
     showTransactionDialog(transaction = null) {
         if (!this.currentAccount)
             return;
@@ -617,7 +663,7 @@ export const CashbookWindow = GObject.registerClass({
         });
         const dateEntry = new Adw.EntryRow({
             title: _('Date (YYYY-MM-DD)'),
-            text: transaction?.date ?? GLib.DateTime.new_now_local().format('%F'),
+            text: transaction?.date ?? this.getDefaultTransactionDate(),
             activates_default: true,
         });
         const calendarPopover = new Gtk.Popover({
