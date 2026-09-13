@@ -28,6 +28,16 @@
   </branding>
 
   <releases>
+    <release version="0.1.3" date="2026-09-13">
+      <description>
+        <ul>
+          <li>Export the selected account's transactions as CSV from the hamburger menu.</li>
+          <li>Automatically select Debit when entering a negative amount.</li>
+          <li>Choose today or the last-added transaction's date as the default for new transactions in Preferences. Empty accounts use today.</li>
+          <li>Remove trailing dots from hamburger menu labels.</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.1.2" date="2026-09-12">
       <description>
         <p>Press Ctrl+N to open the Add Transaction dialog for the selected account. The shortcut is also listed in the keyboard shortcuts dialog.</p>
