@@ -689,7 +689,17 @@ export const CashbookWindow = GObject.registerClass({
             }
             updateValidation();
         };
-        amountEntry.connect('changed', updateValidation);
+        amountEntry.connect('changed', () => {
+            const value = amountEntry.text.trimStart();
+            if (value.startsWith('-')) {
+                typeGroup.active_name = 'debit';
+                const position = amountEntry.get_position();
+                const removed = amountEntry.text.length - value.length + 1;
+                amountEntry.text = value.slice(1);
+                amountEntry.set_position(Math.max(0, position - removed));
+            }
+            updateValidation();
+        });
         dateEntry.connect('changed', syncCalendar);
         calendar.connect('day-selected', () => {
             if (syncingDate)
