@@ -194,6 +194,10 @@
         <attribute name="action">win.add-account</attribute>
       </item>
       <item>
+        <attribute name="label" translatable="yes">_Export as CSV...</attribute>
+        <attribute name="action">win.export-csv</attribute>
+      </item>
+      <item>
         <attribute name="label" translatable="yes">_Back Up...</attribute>
         <attribute name="action">win.backup</attribute>
       </item>

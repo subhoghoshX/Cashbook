@@ -12,6 +12,10 @@ test('database-backup', find_program('python3'),
   args: [files('test-backup.py'), database_helper],
 )
 
+test('account-csv', find_program('gjs'),
+  args: ['-m', files('test-csv.js'), database_helper],
+)
+
 src_res = gnome.compile_resources('io.subho.Cashbook.src',
   'io.subho.Cashbook.src.gresource.xml',
   gresource_bundle: true,

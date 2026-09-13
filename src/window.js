@@ -6,6 +6,8 @@ import GLib from 'gi://GLib';
 import GObject from 'gi://GObject';
 import Gtk from 'gi://Gtk';
 
+import { accountCsv } from './csv.js';
+
 const ACCOUNT_ICONS = [
     { name: 'cashbook-bank-symbolic', label: 'Bank' },
     { name: 'cashbook-money-symbolic', label: 'Cash' },
@@ -160,6 +162,10 @@ export const CashbookWindow = GObject.registerClass({
         this.backupAction.connect('activate', () => this.chooseBackupFolder());
         this.add_action(this.backupAction);
 
+        this.exportCsvAction = new Gio.SimpleAction({ name: 'export-csv', enabled: false });
+        this.exportCsvAction.connect('activate', () => this.exportCsv());
+        this.add_action(this.exportCsvAction);
+
         this.openSavedDirectory();
     }
 
@@ -235,10 +241,59 @@ export const CashbookWindow = GObject.registerClass({
         });
     }
 
+    exportCsv() {
+        if (!this.database || !this.currentAccount)
+            return;
+
+        // Capture this account before opening the asynchronous save dialog.
+        let contents;
+        try {
+            contents = new TextEncoder().encode(accountCsv(this.database, this.currentAccount.id));
+        } catch (error) {
+            this.showToast(`Could not export CSV: ${error.message}`);
+            return;
+        }
+
+        const name = this.currentAccount.name.replace(/[\/\\\x00-\x1f\x7f]/g, '_').trim() || 'account';
+        const timestamp = GLib.DateTime.new_now_local().format('%Y-%m-%d_%H-%M-%S');
+        const filter = new Gtk.FileFilter({ name: 'CSV files' });
+        filter.add_pattern('*.csv');
+        const filters = new Gio.ListStore({ item_type: Gtk.FileFilter });
+        filters.append(filter);
+        const dialog = new Gtk.FileDialog({
+            title: 'Export Account as CSV',
+            modal: true,
+            initial_name: `${name}-${timestamp}.csv`,
+            filters,
+            default_filter: filter,
+        });
+        dialog.save(this, null, (source, result) => {
+            try {
+                const file = source.save_finish(result);
+                file.replace_contents_bytes_async(
+                    new GLib.Bytes(contents), null, false, Gio.FileCreateFlags.REPLACE_DESTINATION,
+                    null, (destination, writeResult) => {
+                        try {
+                            destination.replace_contents_finish(writeResult);
+                            this.showToast(`CSV saved as ${destination.get_basename()}`);
+                        } catch (error) {
+                            this.showToast(`Could not export CSV: ${error.message}`);
+                        }
+                    }
+                );
+            } catch (error) {
+                if (!error.matches?.(Gtk.DialogError, Gtk.DialogError.DISMISSED) &&
+                    !error.matches?.(Gtk.DialogError, Gtk.DialogError.CANCELLED))
+                    this.showToast(`Could not export CSV: ${error.message}`);
+            }
+        });
+    }
+
     showFolderChooser() {
         this.settings.set_string('data-directory', '');
         this.database = null;
         this.backupAction.enabled = false;
+        this.exportCsvAction.enabled = false;
         this.accounts = [];
         this.transactions = [];
         this.currentAccount = null;
@@ -259,6 +314,7 @@ export const CashbookWindow = GObject.registerClass({
         } catch (error) {
             this.database = null;
             this.backupAction.enabled = false;
+            this.exportCsvAction.enabled = false;
             this._root_stack.visible_child_name = 'welcome';
             this.showToast(`Could not open this folder: ${error.message}`);
             return false;
@@ -330,6 +386,7 @@ export const CashbookWindow = GObject.registerClass({
     }
 
     showNoAccount() {
+        this.exportCsvAction.enabled = false;
         this._search_entry.visible = false;
         this._add_transaction_button.sensitive = false;
         this._transaction_stack.visible_child_name = 'empty';
@@ -342,6 +399,7 @@ export const CashbookWindow = GObject.registerClass({
 
     selectAccount(account) {
         this.currentAccount = account;
+        this.exportCsvAction.enabled = true;
         this._search_entry.visible = true;
         this._add_transaction_button.sensitive = true;
         try {
