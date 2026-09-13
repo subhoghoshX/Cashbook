@@ -4,9 +4,9 @@ Cashbook is a local GNOME app for recording bank and cash transactions. It store
 
 Money is stored as integer paise. The app currently supports Indian rupees, credit and debit transactions, dates, descriptions, full-table search, and per-account balances.
 
-Use **Back Up...** in the sidebar menu to save a timestamped SQLite snapshot of all accounts and transactions in a folder you choose. Backups do not change the active data folder and are not encrypted. There is no restore action yet.
+Use **Back Up** in the sidebar menu to save a timestamped SQLite snapshot of all accounts and transactions in a folder you choose. Backups do not change the active data folder and are not encrypted. There is no restore action yet.
 
-Use **Export as CSV...** in the sidebar hamburger menu to save all transactions for the selected account, even when search is active. The CSV includes date, description, credit/debit type, amount in rupees, and a transfer flag. Amounts use two decimal places without currency symbols or grouping separators. An account with no transactions exports just the column headers.
+Use **Export as CSV** in the sidebar hamburger menu to save all transactions for the selected account, even when search is active. The CSV includes date, description, credit/debit type, amount in rupees, and a transfer flag. Amounts use two decimal places without currency symbols or grouping separators. An account with no transactions exports just the column headers.
 
 ## Install
 
